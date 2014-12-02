@@ -12,6 +12,13 @@
 
 #include <SmartMatrix_32x32.h>
 
+#define HISTORY_GENERATIONS 10
+
+uint16_t history[HISTORY_GENERATIONS];
+uint16_t generations=0;
+
+
+
 SmartMatrix matrix;
 
 const int defaultBrightness = 100*(255/100);    // full brightness
@@ -43,13 +50,8 @@ void setup() {
     srand(108);
 
     for (int x = 0; x < 34*34; x++) {
-        currentGenerationPtr[x] = rand()%2 ? 0x00 : 0xff;
-//        currentGenerationPtr[x] = 0x00;
+        currentGenerationPtr[x] = rand()%2;
     }
-
-//    currentGenerationPtr[34*16+8] = 0xff;
-//    currentGenerationPtr[34*16+9] = 0xff;
-//    currentGenerationPtr[34*16+10] = 0xff;
 }
 
 // the loop() method runs over and over again, as long as the board has power
@@ -79,6 +81,23 @@ void loop() {
         }
     }
 
+    // Boringness detection
+    pushGeneration(countLiveCells());
+
+    if (patternRepeat())
+        generations++;
+    else
+        generations = 0;
+
+    if(generations == HISTORY_GENERATIONS*20)
+    {
+        for (int x = 13; x < 21; x++) {
+            for (int y = 13; y < 21; y++) {
+              generationBuffer[generationToggle][x][y] = rand()%2;
+            }
+        }
+        generations = 0;
+    }
 
     // Display current generation
     for (int x = 0; x < 32; x++) {
@@ -101,24 +120,69 @@ void swapGenerationBuffer() {
 }
 
 uint8_t getCellStatus(uint8_t x, uint8_t y) {
-//    return generationBuffer[!generationToggle][x][y];
 
     uint16_t count = 0;
 
-    count += generationBuffer[!generationToggle][x-1][y-1] ? 1 : 0;
-    count += generationBuffer[!generationToggle][x][y-1] ? 1 : 0;
-    count += generationBuffer[!generationToggle][x+1][y-1] ? 1 : 0;
-    count += generationBuffer[!generationToggle][x-1][y] ? 1 : 0;
-    count += generationBuffer[!generationToggle][x+1][y] ? 1 : 0;
-    count += generationBuffer[!generationToggle][x-1][y+1] ? 1 : 0;
-    count += generationBuffer[!generationToggle][x][y+1] ? 1 : 0;
-    count += generationBuffer[!generationToggle][x+1][y+1] ? 1 : 0;
+    count += generationBuffer[!generationToggle][x-1][y-1];
+    count += generationBuffer[!generationToggle][x][y-1];
+    count += generationBuffer[!generationToggle][x+1][y-1];
+    count += generationBuffer[!generationToggle][x-1][y];
+    count += generationBuffer[!generationToggle][x+1][y];
+    count += generationBuffer[!generationToggle][x-1][y+1];
+    count += generationBuffer[!generationToggle][x][y+1];
+    count += generationBuffer[!generationToggle][x+1][y+1];
 
-//    count = count >> 8;
+    return (count == 3 || (count == 2 && generationBuffer[!generationToggle][x][y]));
+}
 
-    return (count == 3 || (count == 2 && generationBuffer[!generationToggle][x][y])) ? 0xff : 0x00;
+// Test if the pattern of total live cells in history duplicates
+unsigned int patternRepeat(void)
+{
+	uint8_t repeat = 0;
+
+	for (int genPatternLength = HISTORY_GENERATIONS/2; genPatternLength >= 1; genPatternLength--)
+	{
+		int notsame = 0;
+
+        // test for duplicate pattern
+		for (int gen = genPatternLength-1; gen >= 0; gen--)
+			if (history[gen] != history[genPatternLength+gen])
+				notsame++;
+
+		if (!notsame)
+		{
+		    // two patterns repeat
+			repeat = 1;
+		}
+	}
+	return repeat;
+}
+
+// Push generation live cell total on top of history stack
+void pushGeneration(uint16_t total)
+{
+	for (uint8_t x = HISTORY_GENERATIONS - 1; x > 0; x--)
+		history[x-1] = history[x];
+
+	history[HISTORY_GENERATIONS - 1] = total;
+}
+
+// Count the number of live cells in a generation
+unsigned int countLiveCells()
+{
+	uint16_t total = 0;
+	uint8_t x,y;
+	for(x=1; x < 33; x++)
+	{
+		for(y=1; y < 33; y++)
+		{
+			if (generationBuffer[generationToggle][x-1][y-1]) {
+    			total++;
+			}
+		}
+	}
+	return total;
 }
 
 // TODO: Random number seed
-// TODO: Boredom detector
 // TODO: Colors

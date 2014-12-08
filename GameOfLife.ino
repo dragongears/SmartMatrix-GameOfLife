@@ -10,14 +10,13 @@
 // -+---+-
 // 3|123|1
 
+#include <Time.h>
 #include <SmartMatrix_32x32.h>
 
 #define HISTORY_GENERATIONS 10
 
 uint16_t history[HISTORY_GENERATIONS];
 uint16_t generations=0;
-
-
 
 SmartMatrix matrix;
 
@@ -36,18 +35,17 @@ uint8_t *previousGenerationPtr;
 
 // the setup() method runs once, when the sketch starts
 void setup() {
-    // initialize the digital pin as an output.
-    pinMode(ledPin, OUTPUT);
-
-    Serial.begin(38400);
-
     matrix.begin();
     matrix.setBrightness(defaultBrightness);
 
     // Initialize generation buffer
     swapGenerationBuffer();
 
-    srand(108);
+    // Use teensy RTC for time
+    setSyncProvider(getTeensy3Time);
+
+    // Set the random seed to the current time
+    srand(now());
 
     for (int x = 0; x < 34*34; x++) {
         currentGenerationPtr[x] = rand()%2;
@@ -56,10 +54,8 @@ void setup() {
 
 // the loop() method runs over and over again, as long as the board has power
 void loop() {
-
     // Swap generation buffers (current generation becomes previous generation)
     swapGenerationBuffer();
-
 
     // Wrap outside borders of previous generation
     for (int k = 1; k < 33; k++) {
@@ -113,12 +109,14 @@ void loop() {
     delay(100);
 }
 
+// Swap current and previous generation buffers
 void swapGenerationBuffer() {
     generationToggle = !generationToggle;
     currentGenerationPtr = &generationBuffer[generationToggle][0][0];
     previousGenerationPtr = &generationBuffer[!generationToggle][0][0];
 }
 
+// Count neighbors and determine if cell is alive or dead
 uint8_t getCellStatus(uint8_t x, uint8_t y) {
 
     uint16_t count = 0;
@@ -184,5 +182,10 @@ unsigned int countLiveCells()
 	return total;
 }
 
-// TODO: Random number seed
+// Set time from RTC
+time_t getTeensy3Time()
+{
+  return Teensy3Clock.get();
+}
+
 // TODO: Colors

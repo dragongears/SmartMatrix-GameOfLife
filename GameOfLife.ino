@@ -25,9 +25,6 @@ const int defaultBrightness = 100*(255/100);    // full brightness
 const rgb24 black = {0, 0, 0};
 const rgb24 white = {0xff, 0xff, 0xff};
 
-// Teensy 3.1 has the LED on pin 13
-const int ledPin = 13;
-
 uint8_t generationBuffer[2][34][34];
 uint8_t generationToggle = 0;
 uint8_t *currentGenerationPtr;

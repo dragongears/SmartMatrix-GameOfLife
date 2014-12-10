@@ -36,6 +36,39 @@
 
 #include <Time.h>
 #include <SmartMatrix_32x32.h>
+#include <IRremote.h>
+
+int RECV_PIN = 18;
+unsigned long speed = 100;
+
+IRrecv irrecv(RECV_PIN);
+
+decode_results results;
+
+
+// IR Raw Key Codes for NEC remote
+#define IRCODE_NEC_HELD        0xFFFFFFFF
+#define IRCODE_NEC_ANSWER        0x00FFA25D
+#define IRCODE_NEC_PHONE        0x00FF629D
+#define IRCODE_NEC_HANGUP        0x00FFE21D
+#define IRCODE_NEC_CH_DOWN        0x00FF22DD
+#define IRCODE_NEC_CH_UP        0x00FF02FD
+#define IRCODE_NEC_EQ        0x00FFC23D
+#define IRCODE_NEC_REW        0x00FFE01F
+#define IRCODE_NEC_FF        0x00FFA857
+#define IRCODE_NEC_PLAY_PAUSE        0x00FF906F
+#define IRCODE_NEC_MINUS        0x00FF9867
+#define IRCODE_NEC_PLUS        0x00FFB04F
+#define IRCODE_GENERIC_0        0x00FF6897
+#define IRCODE_GENERIC_1        0x00FF30CF
+#define IRCODE_GENERIC_2        0x00FF18E7
+#define IRCODE_GENERIC_3        0x00FF7A85
+#define IRCODE_GENERIC_4        0x00FF10EF
+#define IRCODE_GENERIC_5        0x00FF38C7
+#define IRCODE_GENERIC_6        0x00FF5AA5
+#define IRCODE_GENERIC_7        0x00FF42BD
+#define IRCODE_GENERIC_8        0x00FF4AB5
+#define IRCODE_GENERIC_9        0x00FF52AD
 
 #define HISTORY_GENERATIONS 10
 
@@ -56,6 +89,8 @@ uint8_t *previousGenerationPtr;
 
 // the setup() method runs once, when the sketch starts
 void setup() {
+    irrecv.enableIRIn(); // Start the receiver
+
     matrix.begin();
     matrix.setBrightness(defaultBrightness);
 
@@ -94,7 +129,7 @@ void loop() {
     // Do next generation calculation from previous generation into current generation
     for (int x = 1; x < 33; x++) {
         for (int y = 1; y < 33; y++) {
-          generationBuffer[generationToggle][x][y] = getCellStatus(x, y);
+            generationBuffer[generationToggle][x][y] = getCellStatus(x, y);
         }
     }
 
@@ -110,7 +145,7 @@ void loop() {
     {
         for (int x = 13; x < 21; x++) {
             for (int y = 13; y < 21; y++) {
-              generationBuffer[generationToggle][x][y] = rand()%2;
+                generationBuffer[generationToggle][x][y] = rand()%2;
             }
         }
         generations = 0;
@@ -119,15 +154,52 @@ void loop() {
     // Display current generation
     for (int x = 0; x < 32; x++) {
         for (int y = 0; y < 32; y++) {
-          uint8_t cell = generationBuffer[generationToggle][x][y];
-          cell ? matrix.drawPixel(x, y, white) : matrix.drawPixel(x, y, black);
+            uint8_t cell = generationBuffer[generationToggle][x][y];
+            cell ? matrix.drawPixel(x, y, white) : matrix.drawPixel(x, y, black);
         }
     }
 
     matrix.swapBuffers(false);
 
     // Delay
-    delay(100);
+    delay(speed);
+
+    if (irrecv.decode(&results)) {
+        switch(results.value){
+            case IRCODE_NEC_FF:
+                if (speed > 10) {
+                    speed -= 10;
+                }
+                showSpeed();
+            break;
+
+            case IRCODE_NEC_REW:
+                if (speed < 140) {
+                    speed += 10;
+                }
+                showSpeed();
+            break;
+        }
+        irrecv.resume(); // Receive the next value
+    }
+
+}
+
+void showSpeed() {
+    matrix.setFont(font6x10);
+    matrix.drawString(2, 3, {0xff, 0, 0}, "SPEED");
+
+    matrix.setFont(font8x13);
+
+    char value[] = "00";
+    value[0] = '0' + (150-speed) / 100;
+    value[1] = '0' + ((150-speed) % 100) / 10;
+
+    matrix.drawString(8, 16, {0xff, 0xff, 0}, value);
+
+    matrix.swapBuffers(true);
+
+    delay(1000);
 }
 
 // Swap current and previous generation buffers
@@ -210,3 +282,8 @@ time_t getTeensy3Time()
 }
 
 // TODO: Colors
+// TODO: Speed
+// TODO: Brightness
+// TODO: Wrap Toggle
+// TODO: Play/Pause
+// TODO: Starting Patterns

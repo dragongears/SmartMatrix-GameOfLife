@@ -77,8 +77,7 @@ uint16_t generations=0;
 
 SmartMatrix matrix;
 
-const int defaultBrightness = 100*(255/100);    // full brightness
-//const int defaultBrightness = 15*(255/100);    // dim: 15% brightness
+int brightness = 60;
 const rgb24 black = {0, 0, 0};
 const rgb24 white = {0xff, 0xff, 0xff};
 
@@ -92,7 +91,7 @@ void setup() {
     irrecv.enableIRIn(); // Start the receiver
 
     matrix.begin();
-    matrix.setBrightness(defaultBrightness);
+    matrix.setBrightness(brightness*(255/100));
 
     // Initialize generation buffer
     swapGenerationBuffer();
@@ -179,6 +178,22 @@ void loop() {
                 }
                 showSpeed();
             break;
+
+            case IRCODE_NEC_MINUS:
+                if (brightness > 10) {
+                    brightness -= 10;
+                    matrix.setBrightness(brightness*(255/100));
+                }
+                showBrightness();
+            break;
+
+            case IRCODE_NEC_PLUS:
+                if (brightness < 100) {
+                    brightness += 10;
+                    matrix.setBrightness(brightness*(255/100));
+                }
+                showBrightness();
+            break;
         }
         irrecv.resume(); // Receive the next value
     }
@@ -194,6 +209,23 @@ void showSpeed() {
     char value[] = "00";
     value[0] = '0' + (150-speed) / 100;
     value[1] = '0' + ((150-speed) % 100) / 10;
+
+    matrix.drawString(8, 16, {0xff, 0xff, 0}, value);
+
+    matrix.swapBuffers(true);
+
+    delay(1000);
+}
+
+void showBrightness() {
+    matrix.setFont(font5x7);
+    matrix.drawString(2, 3, {0xff, 0, 0}, "BRIGHT");
+
+    matrix.setFont(font8x13);
+
+    char value[] = "00";
+    value[0] = '0' + (brightness/10) / 10;
+    value[1] = '0' + (brightness/10) % 10;
 
     matrix.drawString(8, 16, {0xff, 0xff, 0}, value);
 
@@ -227,8 +259,7 @@ uint8_t getCellStatus(uint8_t x, uint8_t y) {
 }
 
 // Test if the pattern of total live cells in history duplicates
-unsigned int patternRepeat(void)
-{
+uint8_t patternRepeat(void) {
 	uint8_t repeat = 0;
 
 	for (int genPatternLength = HISTORY_GENERATIONS/2; genPatternLength >= 1; genPatternLength--)
@@ -250,8 +281,7 @@ unsigned int patternRepeat(void)
 }
 
 // Push generation live cell total on top of history stack
-void pushGeneration(uint16_t total)
-{
+void pushGeneration(uint16_t total) {
 	for (uint8_t x = HISTORY_GENERATIONS - 1; x > 0; x--)
 		history[x-1] = history[x];
 
@@ -259,8 +289,7 @@ void pushGeneration(uint16_t total)
 }
 
 // Count the number of live cells in a generation
-unsigned int countLiveCells()
-{
+unsigned int countLiveCells() {
 	uint16_t total = 0;
 	uint8_t x,y;
 	for(x=1; x < 33; x++)
@@ -276,14 +305,11 @@ unsigned int countLiveCells()
 }
 
 // Set time from RTC
-time_t getTeensy3Time()
-{
+time_t getTeensy3Time() {
   return Teensy3Clock.get();
 }
 
 // TODO: Colors
-// TODO: Speed
-// TODO: Brightness
 // TODO: Wrap Toggle
-// TODO: Play/Pause
+// TODO: Play/Pause (Step)
 // TODO: Starting Patterns

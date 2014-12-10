@@ -39,41 +39,32 @@
 #include <IRremote.h>
 
 int RECV_PIN = 18;
-unsigned long speed = 100;
-
 IRrecv irrecv(RECV_PIN);
-
 decode_results results;
 
-
 // IR Raw Key Codes for NEC remote
-#define IRCODE_NEC_HELD        0xFFFFFFFF
-#define IRCODE_NEC_ANSWER        0x00FFA25D
-#define IRCODE_NEC_PHONE        0x00FF629D
-#define IRCODE_NEC_HANGUP        0x00FFE21D
-#define IRCODE_NEC_CH_DOWN        0x00FF22DD
-#define IRCODE_NEC_CH_UP        0x00FF02FD
-#define IRCODE_NEC_EQ        0x00FFC23D
-#define IRCODE_NEC_REW        0x00FFE01F
-#define IRCODE_NEC_FF        0x00FFA857
-#define IRCODE_NEC_PLAY_PAUSE        0x00FF906F
-#define IRCODE_NEC_MINUS        0x00FF9867
-#define IRCODE_NEC_PLUS        0x00FFB04F
-#define IRCODE_GENERIC_0        0x00FF6897
-#define IRCODE_GENERIC_1        0x00FF30CF
-#define IRCODE_GENERIC_2        0x00FF18E7
-#define IRCODE_GENERIC_3        0x00FF7A85
-#define IRCODE_GENERIC_4        0x00FF10EF
-#define IRCODE_GENERIC_5        0x00FF38C7
-#define IRCODE_GENERIC_6        0x00FF5AA5
-#define IRCODE_GENERIC_7        0x00FF42BD
-#define IRCODE_GENERIC_8        0x00FF4AB5
-#define IRCODE_GENERIC_9        0x00FF52AD
-
-#define HISTORY_GENERATIONS 10
-
-uint16_t history[HISTORY_GENERATIONS];
-uint16_t generations=0;
+#define IRCODE_NEC_HELD     0xFFFFFFFF
+#define IRCODE_NEC_ANSWER   0x00FFA25D
+#define IRCODE_NEC_PHONE    0x00FF629D
+#define IRCODE_NEC_HANGUP   0x00FFE21D
+#define IRCODE_NEC_CH_DOWN  0x00FF22DD
+#define IRCODE_NEC_CH_UP    0x00FF02FD
+#define IRCODE_NEC_EQ       0x00FFC23D
+#define IRCODE_NEC_REW      0x00FFE01F
+#define IRCODE_NEC_FF       0x00FFA857
+#define IRCODE_NEC_PLAY     0x00FF906F
+#define IRCODE_NEC_MINUS    0x00FF9867
+#define IRCODE_NEC_PLUS     0x00FFB04F
+#define IRCODE_GENERIC_0    0x00FF6897
+#define IRCODE_GENERIC_1    0x00FF30CF
+#define IRCODE_GENERIC_2    0x00FF18E7
+#define IRCODE_GENERIC_3    0x00FF7A85
+#define IRCODE_GENERIC_4    0x00FF10EF
+#define IRCODE_GENERIC_5    0x00FF38C7
+#define IRCODE_GENERIC_6    0x00FF5AA5
+#define IRCODE_GENERIC_7    0x00FF42BD
+#define IRCODE_GENERIC_8    0x00FF4AB5
+#define IRCODE_GENERIC_9    0x00FF52AD
 
 SmartMatrix matrix;
 
@@ -81,10 +72,17 @@ int brightness = 60;
 const rgb24 black = {0, 0, 0};
 const rgb24 white = {0xff, 0xff, 0xff};
 
+#define HISTORY_GENERATIONS 10
+
+uint16_t history[HISTORY_GENERATIONS];
+uint16_t generations=0;
+
 uint8_t generationBuffer[2][34][34];
 uint8_t generationToggle = 0;
 uint8_t *currentGenerationPtr;
 uint8_t *previousGenerationPtr;
+
+unsigned long speed = 100;
 
 // the setup() method runs once, when the sketch starts
 void setup() {

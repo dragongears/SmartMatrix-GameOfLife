@@ -77,10 +77,10 @@ const rgb24 white = {0xff, 0xff, 0xff};
 uint16_t history[HISTORY_GENERATIONS];
 uint16_t generations=0;
 
-uint8_t generationBuffer[2][34][34];
-uint8_t generationToggle = 0;
 uint8_t *currentGenerationPtr;
 uint8_t *previousGenerationPtr;
+uint8_t generationBuffer[2][34][34];
+uint8_t generationToggle = 0;
 
 unsigned long speed = 100;
 bool singleStep = false;
@@ -192,17 +192,24 @@ void showWrap() {
         matrix.drawString(11, 3, {0xff, 0, 0}, "NO");
 
         for (int k = 1; k < 33; k++) {
+            generationBuffer[generationToggle][k][0] = 0;
+            generationBuffer[generationToggle][k][33] = 0;
+            generationBuffer[generationToggle][0][k] = 0;
+            generationBuffer[generationToggle][33][k] = 0;
             generationBuffer[!generationToggle][k][0] = 0;
             generationBuffer[!generationToggle][k][33] = 0;
             generationBuffer[!generationToggle][0][k] = 0;
             generationBuffer[!generationToggle][33][k] = 0;
         }
 
+        generationBuffer[generationToggle][0][0] = 0;
+        generationBuffer[generationToggle][33][33] = 0;
+        generationBuffer[generationToggle][0][33] = 0;
+        generationBuffer[generationToggle][33][0] = 0;
         generationBuffer[!generationToggle][0][0] = 0;
         generationBuffer[!generationToggle][33][33] = 0;
         generationBuffer[!generationToggle][0][33] = 0;
         generationBuffer[!generationToggle][33][0] = 0;
-
     }
     matrix.drawString(5, 14, {0xff, 0, 0}, "WRAP");
 
@@ -296,7 +303,7 @@ void advanceGeneration() {
 void displayCurrentGeneration() {
     for (int x = 0; x < 32; x++) {
         for (int y = 0; y < 32; y++) {
-            uint8_t cell = generationBuffer[generationToggle][x][y];
+            uint8_t cell = generationBuffer[generationToggle][x+1][y+1];
             cell ? matrix.drawPixel(x, y, white) : matrix.drawPixel(x, y, black);
         }
     }

@@ -1,6 +1,8 @@
 /*
  * SmartMatrix Game of Life - Conway's Game of Life for the Teensy 3.1 and SmartMatrix Shield.
  *
+ * Version 1.0.0
+ *
  * Copyright (c) 2014 Art Dahm (art@dahm.com)
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of

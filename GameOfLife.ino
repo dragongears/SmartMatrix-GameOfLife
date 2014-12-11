@@ -86,6 +86,8 @@ unsigned long speed = 100;
 bool singleStep = false;
 bool wrap = true;
 long messageMillis = 0;
+uint8_t color = 0;
+rgb24 colors[] = {{0xff, 0xff, 0xff}, {0x00, 0x00, 0xff}, {0x00, 0xff, 0xff}, {0x00, 0xff, 0x00}, {0xff, 0xff, 0x00}, {0xff, 0x00, 0x00}, {0xff, 0x00, 0xff}};
 
 // the setup() method runs once, when the sketch starts
 void setup() {
@@ -156,6 +158,15 @@ void remoteFunctions() {
                 } else {
                     singleStep = true;
                 }
+            break;
+
+            case IRCODE_NEC_PHONE:
+                color++;
+                if (color > 6) {
+                    color = 0;
+                }
+                displayCurrentGeneration();
+                delay(100);
             break;
 
             case IRCODE_NEC_EQ:
@@ -304,7 +315,7 @@ void displayCurrentGeneration() {
     for (int x = 0; x < 32; x++) {
         for (int y = 0; y < 32; y++) {
             uint8_t cell = generationBuffer[generationToggle][x+1][y+1];
-            cell ? matrix.drawPixel(x, y, white) : matrix.drawPixel(x, y, black);
+            cell ? matrix.drawPixel(x, y, colors[color]) : matrix.drawPixel(x, y, black);
         }
     }
 
@@ -405,5 +416,4 @@ time_t getTeensy3Time() {
   return Teensy3Clock.get();
 }
 
-// TODO: Colors
 // TODO: Starting Patterns

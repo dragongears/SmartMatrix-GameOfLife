@@ -83,6 +83,9 @@ uint8_t *currentGenerationPtr;
 uint8_t *previousGenerationPtr;
 
 unsigned long speed = 100;
+bool singleStep = false;
+bool wrap = true;
+long messageMillis = 0;
 
 // the setup() method runs once, when the sketch starts
 void setup() {
@@ -107,74 +110,57 @@ void setup() {
 
 // the loop() method runs over and over again, as long as the board has power
 void loop() {
-    // Swap generation buffers (current generation becomes previous generation)
-    swapGenerationBuffer();
+    if (!singleStep && messageMillis == 0) {
+        // Next generation
+        advanceGeneration();
 
-    // Wrap outside borders of previous generation
-    for (int k = 1; k < 33; k++) {
-        generationBuffer[!generationToggle][k][0] = generationBuffer[!generationToggle][k][32];
-        generationBuffer[!generationToggle][k][33] = generationBuffer[!generationToggle][k][1];
-        generationBuffer[!generationToggle][0][k] = generationBuffer[!generationToggle][32][k];
-        generationBuffer[!generationToggle][33][k] = generationBuffer[!generationToggle][1][k];
+        // Delay
+        delay(speed);
     }
 
-    generationBuffer[!generationToggle][0][0] = generationBuffer[!generationToggle][32][32];
-    generationBuffer[!generationToggle][33][33] = generationBuffer[!generationToggle][1][1];
-    generationBuffer[!generationToggle][0][33] = generationBuffer[!generationToggle][32][1];
-    generationBuffer[!generationToggle][33][0] = generationBuffer[!generationToggle][1][32];
+    // Do remote control functions
+    remoteFunctions();
 
-    // Do next generation calculation from previous generation into current generation
-    for (int x = 1; x < 33; x++) {
-        for (int y = 1; y < 33; y++) {
-            generationBuffer[generationToggle][x][y] = getCellStatus(x, y);
-        }
-    }
+    messageTest();
+}
 
-    // Boringness detection
-    pushGeneration(countLiveCells());
-
-    if (patternRepeat())
-        generations++;
-    else
-        generations = 0;
-
-    if(generations == HISTORY_GENERATIONS*20)
-    {
-        for (int x = 13; x < 21; x++) {
-            for (int y = 13; y < 21; y++) {
-                generationBuffer[generationToggle][x][y] = rand()%2;
-            }
-        }
-        generations = 0;
-    }
-
-    // Display current generation
-    for (int x = 0; x < 32; x++) {
-        for (int y = 0; y < 32; y++) {
-            uint8_t cell = generationBuffer[generationToggle][x][y];
-            cell ? matrix.drawPixel(x, y, white) : matrix.drawPixel(x, y, black);
-        }
-    }
-
-    matrix.swapBuffers(false);
-
-    // Delay
-    delay(speed);
-
+void remoteFunctions() {
+    // Check for code from remote control
     if (irrecv.decode(&results)) {
         switch(results.value){
             case IRCODE_NEC_FF:
-                if (speed > 10) {
-                    speed -= 10;
+                if (singleStep) {
+                    singleStep = false;
+                } else {
+                    if (speed > 10) {
+                        speed -= 10;
+                    }
+                    showSpeed();
                 }
-                showSpeed();
             break;
 
             case IRCODE_NEC_REW:
-                if (speed < 140) {
-                    speed += 10;
+                if (singleStep) {
+                    singleStep = false;
+                } else {
+                    if (speed < 140) {
+                        speed += 10;
+                    }
+                    showSpeed();
                 }
-                showSpeed();
+            break;
+
+            case IRCODE_NEC_PLAY:
+                if (singleStep) {
+                    advanceGeneration();
+                } else {
+                    singleStep = true;
+                }
+            break;
+
+            case IRCODE_NEC_EQ:
+                wrap = !wrap;
+                showWrap();
             break;
 
             case IRCODE_NEC_MINUS:
@@ -195,10 +181,39 @@ void loop() {
         }
         irrecv.resume(); // Receive the next value
     }
+}
 
+void showWrap() {
+    matrix.fillScreen({0x00, 0x00, 0x00});
+
+    matrix.setFont(font6x10);
+
+    if (!wrap) {
+        matrix.drawString(11, 3, {0xff, 0, 0}, "NO");
+
+        for (int k = 1; k < 33; k++) {
+            generationBuffer[!generationToggle][k][0] = 0;
+            generationBuffer[!generationToggle][k][33] = 0;
+            generationBuffer[!generationToggle][0][k] = 0;
+            generationBuffer[!generationToggle][33][k] = 0;
+        }
+
+        generationBuffer[!generationToggle][0][0] = 0;
+        generationBuffer[!generationToggle][33][33] = 0;
+        generationBuffer[!generationToggle][0][33] = 0;
+        generationBuffer[!generationToggle][33][0] = 0;
+
+    }
+    matrix.drawString(5, 14, {0xff, 0, 0}, "WRAP");
+
+    matrix.swapBuffers(true);
+
+    messageInit();
 }
 
 void showSpeed() {
+    matrix.fillScreen({0x00, 0x00, 0x00});
+
     matrix.setFont(font6x10);
     matrix.drawString(2, 3, {0xff, 0, 0}, "SPEED");
 
@@ -212,10 +227,11 @@ void showSpeed() {
 
     matrix.swapBuffers(true);
 
-    delay(1000);
+    messageInit();
 }
 
 void showBrightness() {
+    matrix.fillScreen({0x00, 0x00, 0x00});
     matrix.setFont(font5x7);
     matrix.drawString(2, 3, {0xff, 0, 0}, "BRIGHT");
 
@@ -229,14 +245,63 @@ void showBrightness() {
 
     matrix.swapBuffers(true);
 
-    delay(1000);
+    messageInit();
 }
 
-// Swap current and previous generation buffers
-void swapGenerationBuffer() {
-    generationToggle = !generationToggle;
-    currentGenerationPtr = &generationBuffer[generationToggle][0][0];
-    previousGenerationPtr = &generationBuffer[!generationToggle][0][0];
+void messageInit() {
+    messageMillis = millis();
+}
+
+void messageTest() {
+    if (messageMillis != 0) {
+        if (millis() > messageMillis + 2000) {
+            messageMillis = 0;
+            displayCurrentGeneration();
+        }
+        delay (100);
+    }
+}
+
+void advanceGeneration() {
+    // Swap generation buffers (current generation becomes previous generation)
+    swapGenerationBuffer();
+
+    if (wrap) {
+        // Wrap outside borders of previous generation
+        for (int k = 1; k < 33; k++) {
+            generationBuffer[!generationToggle][k][0] = generationBuffer[!generationToggle][k][32];
+            generationBuffer[!generationToggle][k][33] = generationBuffer[!generationToggle][k][1];
+            generationBuffer[!generationToggle][0][k] = generationBuffer[!generationToggle][32][k];
+            generationBuffer[!generationToggle][33][k] = generationBuffer[!generationToggle][1][k];
+        }
+
+        generationBuffer[!generationToggle][0][0] = generationBuffer[!generationToggle][32][32];
+        generationBuffer[!generationToggle][33][33] = generationBuffer[!generationToggle][1][1];
+        generationBuffer[!generationToggle][0][33] = generationBuffer[!generationToggle][32][1];
+        generationBuffer[!generationToggle][33][0] = generationBuffer[!generationToggle][1][32];
+    }
+
+    // Do next generation calculation from previous generation into current generation
+    for (int x = 1; x < 33; x++) {
+        for (int y = 1; y < 33; y++) {
+            generationBuffer[generationToggle][x][y] = getCellStatus(x, y);
+        }
+    }
+
+    boringnessDetection();
+
+    displayCurrentGeneration();
+}
+
+void displayCurrentGeneration() {
+    for (int x = 0; x < 32; x++) {
+        for (int y = 0; y < 32; y++) {
+            uint8_t cell = generationBuffer[generationToggle][x][y];
+            cell ? matrix.drawPixel(x, y, white) : matrix.drawPixel(x, y, black);
+        }
+    }
+
+    matrix.swapBuffers(false);
 }
 
 // Count neighbors and determine if cell is alive or dead
@@ -254,6 +319,32 @@ uint8_t getCellStatus(uint8_t x, uint8_t y) {
     count += generationBuffer[!generationToggle][x+1][y+1];
 
     return (count == 3 || (count == 2 && generationBuffer[!generationToggle][x][y]));
+}
+
+// Swap current and previous generation buffers
+void swapGenerationBuffer() {
+    generationToggle = !generationToggle;
+    currentGenerationPtr = &generationBuffer[generationToggle][0][0];
+    previousGenerationPtr = &generationBuffer[!generationToggle][0][0];
+}
+
+void boringnessDetection() {
+    pushGeneration(countLiveCells());
+
+    if (patternRepeat())
+        generations++;
+    else
+        generations = 0;
+
+    if(generations == HISTORY_GENERATIONS*20)
+    {
+        for (int x = 13; x < 21; x++) {
+            for (int y = 13; y < 21; y++) {
+                generationBuffer[generationToggle][x][y] = rand()%2;
+            }
+        }
+        generations = 0;
+    }
 }
 
 // Test if the pattern of total live cells in history duplicates
@@ -308,6 +399,4 @@ time_t getTeensy3Time() {
 }
 
 // TODO: Colors
-// TODO: Wrap Toggle
-// TODO: Play/Pause (Step)
 // TODO: Starting Patterns

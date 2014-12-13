@@ -277,6 +277,12 @@ void editRemoteFunctions() {
                 moveEditCursor(0, 1);
             break;
 
+            case IRCODE_NEC_5:
+                editX = 16;
+                editY = 16;
+                moveEditCursor(0, 0);
+            break;
+
         }
         irrecv.resume(); // Receive the next value
     }

@@ -55,16 +55,16 @@ decode_results results;
 #define IRCODE_NEC_PLAY     0x00FF906F
 #define IRCODE_NEC_MINUS    0x00FF9867
 #define IRCODE_NEC_PLUS     0x00FFB04F
-#define IRCODE_GENERIC_0    0x00FF6897
-#define IRCODE_GENERIC_1    0x00FF30CF
-#define IRCODE_GENERIC_2    0x00FF18E7
-#define IRCODE_GENERIC_3    0x00FF7A85
-#define IRCODE_GENERIC_4    0x00FF10EF
-#define IRCODE_GENERIC_5    0x00FF38C7
-#define IRCODE_GENERIC_6    0x00FF5AA5
-#define IRCODE_GENERIC_7    0x00FF42BD
-#define IRCODE_GENERIC_8    0x00FF4AB5
-#define IRCODE_GENERIC_9    0x00FF52AD
+#define IRCODE_NEC_0    0x00FF6897
+#define IRCODE_NEC_1    0x00FF30CF
+#define IRCODE_NEC_2    0x00FF18E7
+#define IRCODE_NEC_3    0x00FF7A85
+#define IRCODE_NEC_4    0x00FF10EF
+#define IRCODE_NEC_5    0x00FF38C7
+#define IRCODE_NEC_6    0x00FF5AA5
+#define IRCODE_NEC_7    0x00FF42BD
+#define IRCODE_NEC_8    0x00FF4AB5
+#define IRCODE_NEC_9    0x00FF52AD
 
 SmartMatrix matrix;
 
@@ -81,6 +81,11 @@ uint8_t *currentGenerationPtr;
 uint8_t *previousGenerationPtr;
 uint8_t generationBuffer[2][34][34];
 uint8_t generationToggle = 0;
+
+bool    editMode = false;
+uint8_t editX = 16;
+uint8_t editY = 16;
+uint8_t editColor;
 
 unsigned long speed = 100;
 bool singleStep = false;
@@ -112,16 +117,20 @@ void setup() {
 
 // the loop() method runs over and over again, as long as the board has power
 void loop() {
-    if (!singleStep && messageMillis == 0) {
-        // Next generation
-        advanceGeneration();
+    if (editMode) {
+        editRemoteFunctions();
+    } else {
+        if (!singleStep && messageMillis == 0) {
+            // Next generation
+            advanceGeneration();
 
-        // Delay
-        delay(speed);
+            // Delay
+            delay(speed);
+        }
+
+        // Do remote control functions
+        remoteFunctions();
     }
-
-    // Do remote control functions
-    remoteFunctions();
 
     messageTest();
 }
@@ -174,7 +183,7 @@ void remoteFunctions() {
                 showWrap();
             break;
 
-            case IRCODE_NEC_MINUS:
+            case IRCODE_NEC_CH_DOWN:
                 if (brightness > 10) {
                     brightness -= 10;
                     matrix.setBrightness(brightness*(255/100));
@@ -182,13 +191,44 @@ void remoteFunctions() {
                 showBrightness();
             break;
 
-            case IRCODE_NEC_PLUS:
+            case IRCODE_NEC_CH_UP:
                 if (brightness < 100) {
                     brightness += 10;
                     matrix.setBrightness(brightness*(255/100));
                 }
                 showBrightness();
             break;
+
+            case IRCODE_NEC_5:
+                editStart();
+            break;
+        }
+        irrecv.resume(); // Receive the next value
+    }
+}
+
+void editStart() {
+    editMode = true;
+    editColor = color;
+    color = 1;
+    displayCurrentGeneration();
+}
+
+void editEnd() {
+    editMode = false;
+    color = editColor;
+    displayCurrentGeneration();
+}
+
+void editRemoteFunctions() {
+    // Check for code from remote control
+    if (irrecv.decode(&results)) {
+        switch(results.value){
+
+            case IRCODE_NEC_PLAY:
+                editEnd();
+            break;
+
         }
         irrecv.resume(); // Receive the next value
     }

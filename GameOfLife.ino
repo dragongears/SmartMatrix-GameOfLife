@@ -110,9 +110,7 @@ void setup() {
     // Set the random seed to the current time
     srand(now());
 
-    for (int x = 0; x < 34*34; x++) {
-        currentGenerationPtr[x] = rand()%2;
-    }
+    randomizeField();
 }
 
 // the loop() method runs over and over again, as long as the board has power
@@ -133,6 +131,12 @@ void loop() {
     }
 
     messageTest();
+}
+
+void randomizeField() {
+    for (int x = 0; x < 34*34; x++) {
+        currentGenerationPtr[x] = rand()%2;
+    }
 }
 
 void remoteFunctions() {
@@ -201,6 +205,11 @@ void remoteFunctions() {
 
             case IRCODE_NEC_5:
                 editStart();
+            break;
+
+            case IRCODE_NEC_0:
+                randomizeField();
+                displayCurrentGeneration();
             break;
         }
         irrecv.resume(); // Receive the next value
@@ -510,4 +519,5 @@ time_t getTeensy3Time() {
   return Teensy3Clock.get();
 }
 
-// TODO: Starting Patterns
+// TODO: Add patterns to editor
+// TODO: Add more C++ concepts

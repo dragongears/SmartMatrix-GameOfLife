@@ -91,8 +91,8 @@ unsigned long speed = 100;
 bool singleStep = false;
 bool wrap = true;
 long messageMillis = 0;
-uint8_t color = 0;
-rgb24 colors[] = {{0xff, 0xff, 0xff}, {0x00, 0x00, 0xff}, {0x00, 0xff, 0xff}, {0x00, 0xff, 0x00}, {0xff, 0xff, 0x00}, {0xff, 0x00, 0x00}, {0xff, 0x00, 0xff}};
+uint8_t color = 1;
+rgb24 colors[] = {{0x99, 0x99, 0x99}, {0xff, 0xff, 0xff}, {0x00, 0x00, 0xff}, {0x00, 0xff, 0xff}, {0x00, 0xff, 0x00}, {0xff, 0xff, 0x00}, {0xff, 0x00, 0x00}, {0xff, 0x00, 0xff}};
 
 // the setup() method runs once, when the sketch starts
 void setup() {
@@ -171,8 +171,8 @@ void remoteFunctions() {
 
             case IRCODE_NEC_PHONE:
                 color++;
-                if (color > 6) {
-                    color = 0;
+                if (color > 7) {
+                    color = 1;
                 }
                 displayCurrentGeneration();
                 delay(100);
@@ -210,14 +210,29 @@ void remoteFunctions() {
 void editStart() {
     editMode = true;
     editColor = color;
-    color = 1;
+    color = 0;
     displayCurrentGeneration();
+    drawEditCursor();
 }
 
 void editEnd() {
     editMode = false;
     color = editColor;
     displayCurrentGeneration();
+}
+
+void moveEditCursor(int8_t x, int8_t y) {
+    displayCurrentGeneration();
+    editX += x;
+    editY += y;
+    editX %= 32;
+    editY %= 32;
+    drawEditCursor();
+}
+
+void drawEditCursor() {
+    uint8_t cell = generationBuffer[generationToggle][editX+1][editY+1];
+    cell ? matrix.drawPixel(editX, editY, {0x00, 0xff, 0x00}) : matrix.drawPixel(editX, editY, {0xff, 0x00, 0x00});
 }
 
 void editRemoteFunctions() {
@@ -227,6 +242,22 @@ void editRemoteFunctions() {
 
             case IRCODE_NEC_PLAY:
                 editEnd();
+            break;
+
+            case IRCODE_NEC_4:
+                moveEditCursor(-1, 0);
+            break;
+
+            case IRCODE_NEC_6:
+                moveEditCursor(1, 0);
+            break;
+
+            case IRCODE_NEC_2:
+                moveEditCursor(0, -1);
+            break;
+
+            case IRCODE_NEC_8:
+                moveEditCursor(0, 1);
             break;
 
         }

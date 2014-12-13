@@ -244,6 +244,13 @@ void editRemoteFunctions() {
                 editEnd();
             break;
 
+            case IRCODE_NEC_0:
+                for (int x = 0; x < 34*34; x++) {
+                    currentGenerationPtr[x] = 0;
+                }
+                moveEditCursor(0, 0);
+            break;
+
             case IRCODE_NEC_PLUS:
                 generationBuffer[generationToggle][editX+1][editY+1] = 1;
                 moveEditCursor(0, 0);

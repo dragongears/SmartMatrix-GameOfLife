@@ -55,16 +55,16 @@ decode_results results;
 #define IRCODE_NEC_PLAY     0x00FF906F
 #define IRCODE_NEC_MINUS    0x00FF9867
 #define IRCODE_NEC_PLUS     0x00FFB04F
-#define IRCODE_GENERIC_0    0x00FF6897
-#define IRCODE_GENERIC_1    0x00FF30CF
-#define IRCODE_GENERIC_2    0x00FF18E7
-#define IRCODE_GENERIC_3    0x00FF7A85
-#define IRCODE_GENERIC_4    0x00FF10EF
-#define IRCODE_GENERIC_5    0x00FF38C7
-#define IRCODE_GENERIC_6    0x00FF5AA5
-#define IRCODE_GENERIC_7    0x00FF42BD
-#define IRCODE_GENERIC_8    0x00FF4AB5
-#define IRCODE_GENERIC_9    0x00FF52AD
+#define IRCODE_NEC_0    0x00FF6897
+#define IRCODE_NEC_1    0x00FF30CF
+#define IRCODE_NEC_2    0x00FF18E7
+#define IRCODE_NEC_3    0x00FF7A85
+#define IRCODE_NEC_4    0x00FF10EF
+#define IRCODE_NEC_5    0x00FF38C7
+#define IRCODE_NEC_6    0x00FF5AA5
+#define IRCODE_NEC_7    0x00FF42BD
+#define IRCODE_NEC_8    0x00FF4AB5
+#define IRCODE_NEC_9    0x00FF52AD
 
 SmartMatrix matrix;
 
@@ -82,12 +82,17 @@ uint8_t *previousGenerationPtr;
 uint8_t generationBuffer[2][34][34];
 uint8_t generationToggle = 0;
 
+bool    editMode = false;
+uint8_t editX = 16;
+uint8_t editY = 16;
+uint8_t editColor;
+
 unsigned long speed = 100;
 bool singleStep = false;
 bool wrap = true;
 long messageMillis = 0;
-uint8_t color = 0;
-rgb24 colors[] = {{0xff, 0xff, 0xff}, {0x00, 0x00, 0xff}, {0x00, 0xff, 0xff}, {0x00, 0xff, 0x00}, {0xff, 0xff, 0x00}, {0xff, 0x00, 0x00}, {0xff, 0x00, 0xff}};
+uint8_t color = 1;
+rgb24 colors[] = {{0x99, 0x99, 0x99}, {0xff, 0xff, 0xff}, {0x00, 0x00, 0xff}, {0x00, 0xff, 0xff}, {0x00, 0xff, 0x00}, {0xff, 0xff, 0x00}, {0xff, 0x00, 0x00}, {0xff, 0x00, 0xff}};
 
 // the setup() method runs once, when the sketch starts
 void setup() {
@@ -105,25 +110,33 @@ void setup() {
     // Set the random seed to the current time
     srand(now());
 
-    for (int x = 0; x < 34*34; x++) {
-        currentGenerationPtr[x] = rand()%2;
-    }
+    randomizeField();
 }
 
 // the loop() method runs over and over again, as long as the board has power
 void loop() {
-    if (!singleStep && messageMillis == 0) {
-        // Next generation
-        advanceGeneration();
+    if (editMode) {
+        editRemoteFunctions();
+    } else {
+        if (!singleStep && messageMillis == 0) {
+            // Next generation
+            advanceGeneration();
 
-        // Delay
-        delay(speed);
+            // Delay
+            delay(speed);
+        }
+
+        // Do remote control functions
+        remoteFunctions();
     }
 
-    // Do remote control functions
-    remoteFunctions();
-
     messageTest();
+}
+
+void randomizeField() {
+    for (int x = 0; x < 34*34; x++) {
+        currentGenerationPtr[x] = rand()%2;
+    }
 }
 
 void remoteFunctions() {
@@ -162,8 +175,8 @@ void remoteFunctions() {
 
             case IRCODE_NEC_PHONE:
                 color++;
-                if (color > 6) {
-                    color = 0;
+                if (color > 7) {
+                    color = 1;
                 }
                 displayCurrentGeneration();
                 delay(100);
@@ -174,7 +187,7 @@ void remoteFunctions() {
                 showWrap();
             break;
 
-            case IRCODE_NEC_MINUS:
+            case IRCODE_NEC_CH_DOWN:
                 if (brightness > 10) {
                     brightness -= 10;
                     matrix.setBrightness(brightness*(255/100));
@@ -182,13 +195,103 @@ void remoteFunctions() {
                 showBrightness();
             break;
 
-            case IRCODE_NEC_PLUS:
+            case IRCODE_NEC_CH_UP:
                 if (brightness < 100) {
                     brightness += 10;
                     matrix.setBrightness(brightness*(255/100));
                 }
                 showBrightness();
             break;
+
+            case IRCODE_NEC_5:
+                editStart();
+            break;
+
+            case IRCODE_NEC_0:
+                randomizeField();
+                displayCurrentGeneration();
+            break;
+        }
+        irrecv.resume(); // Receive the next value
+    }
+}
+
+void editStart() {
+    editMode = true;
+    editColor = color;
+    color = 0;
+    displayCurrentGeneration();
+    drawEditCursor();
+}
+
+void editEnd() {
+    editMode = false;
+    color = editColor;
+    displayCurrentGeneration();
+}
+
+void moveEditCursor(int8_t x, int8_t y) {
+    displayCurrentGeneration();
+    editX += x;
+    editY += y;
+    editX %= 32;
+    editY %= 32;
+    drawEditCursor();
+}
+
+void drawEditCursor() {
+    uint8_t cell = generationBuffer[generationToggle][editX+1][editY+1];
+    cell ? matrix.drawPixel(editX, editY, {0x00, 0xff, 0x00}) : matrix.drawPixel(editX, editY, {0xff, 0x00, 0x00});
+}
+
+void editRemoteFunctions() {
+    // Check for code from remote control
+    if (irrecv.decode(&results)) {
+        switch(results.value){
+
+            case IRCODE_NEC_PLAY:
+                editEnd();
+            break;
+
+            case IRCODE_NEC_0:
+                for (int x = 0; x < 34*34; x++) {
+                    currentGenerationPtr[x] = 0;
+                }
+                moveEditCursor(0, 0);
+            break;
+
+            case IRCODE_NEC_PLUS:
+                generationBuffer[generationToggle][editX+1][editY+1] = 1;
+                moveEditCursor(0, 0);
+            break;
+
+            case IRCODE_NEC_MINUS:
+                generationBuffer[generationToggle][editX+1][editY+1] = 0;
+                moveEditCursor(0, 0);
+            break;
+
+            case IRCODE_NEC_4:
+                moveEditCursor(-1, 0);
+            break;
+
+            case IRCODE_NEC_6:
+                moveEditCursor(1, 0);
+            break;
+
+            case IRCODE_NEC_2:
+                moveEditCursor(0, -1);
+            break;
+
+            case IRCODE_NEC_8:
+                moveEditCursor(0, 1);
+            break;
+
+            case IRCODE_NEC_5:
+                editX = 16;
+                editY = 16;
+                moveEditCursor(0, 0);
+            break;
+
         }
         irrecv.resume(); // Receive the next value
     }
@@ -416,4 +519,5 @@ time_t getTeensy3Time() {
   return Teensy3Clock.get();
 }
 
-// TODO: Starting Patterns
+// TODO: Add patterns to editor
+// TODO: Add more C++ concepts

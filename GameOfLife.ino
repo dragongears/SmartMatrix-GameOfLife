@@ -1,6 +1,6 @@
 /*
  * SmartMatrix Game of Life - Conway's Game of Life for the Teensy 3.1 and SmartMatrix Shield.
- * Version 1.1.1
+ * Version 1.1.2
  * Copyright (c) 2014 Art Dahm (art@dahm.com)
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of
@@ -71,6 +71,10 @@ SmartMatrix matrix;
 int brightness = 60;
 const rgb24 black = {0, 0, 0};
 const rgb24 white = {0xff, 0xff, 0xff};
+const rgb24 textColor = {0xff, 0, 0};
+const rgb24 valueColor = {0xff, 0xff, 0};
+const rgb24 cursorColor = {0xff, 0x00, 0x00};
+const rgb24 cursorOverCellColor = {0x00, 0xff, 0x00};
 
 #define HISTORY_GENERATIONS 10
 
@@ -241,7 +245,7 @@ void moveEditCursor(int8_t x, int8_t y) {
 
 void drawEditCursor() {
     uint8_t cell = generationBuffer[generationToggle][editX+1][editY+1];
-    cell ? matrix.drawPixel(editX, editY, {0x00, 0xff, 0x00}) : matrix.drawPixel(editX, editY, {0xff, 0x00, 0x00});
+    cell ? matrix.drawPixel(editX, editY, cursorOverCellColor) : matrix.drawPixel(editX, editY, cursorColor);
 }
 
 void editRemoteFunctions() {
@@ -298,12 +302,12 @@ void editRemoteFunctions() {
 }
 
 void showWrap() {
-    matrix.fillScreen({0x00, 0x00, 0x00});
+    matrix.fillScreen(black);
 
     matrix.setFont(font6x10);
 
     if (!wrap) {
-        matrix.drawString(11, 3, {0xff, 0, 0}, "NO");
+        matrix.drawString(11, 3, textColor, "NO");
 
         for (int k = 1; k < 33; k++) {
             generationBuffer[generationToggle][k][0] = 0;
@@ -325,18 +329,18 @@ void showWrap() {
         generationBuffer[!generationToggle][0][33] = 0;
         generationBuffer[!generationToggle][33][0] = 0;
     }
-    matrix.drawString(5, 14, {0xff, 0, 0}, "WRAP");
+    matrix.drawString(5, 14, textColor, "WRAP");
 
-    matrix.swapBuffers(true);
+    matrix.swapBuffers(false);
 
     messageInit();
 }
 
 void showSpeed() {
-    matrix.fillScreen({0x00, 0x00, 0x00});
+    matrix.fillScreen(black);
 
     matrix.setFont(font6x10);
-    matrix.drawString(2, 3, {0xff, 0, 0}, "SPEED");
+    matrix.drawString(2, 3, textColor, "SPEED");
 
     matrix.setFont(font8x13);
 
@@ -344,17 +348,17 @@ void showSpeed() {
     value[0] = '0' + (150-speed) / 100;
     value[1] = '0' + ((150-speed) % 100) / 10;
 
-    matrix.drawString(8, 16, {0xff, 0xff, 0}, value);
+    matrix.drawString(8, 16, valueColor, value);
 
-    matrix.swapBuffers(true);
+    matrix.swapBuffers(false);
 
     messageInit();
 }
 
 void showBrightness() {
-    matrix.fillScreen({0x00, 0x00, 0x00});
+    matrix.fillScreen(black);
     matrix.setFont(font5x7);
-    matrix.drawString(2, 3, {0xff, 0, 0}, "BRIGHT");
+    matrix.drawString(2, 3, textColor, "BRIGHT");
 
     matrix.setFont(font8x13);
 
@@ -362,17 +366,19 @@ void showBrightness() {
     value[0] = '0' + (brightness/10) / 10;
     value[1] = '0' + (brightness/10) % 10;
 
-    matrix.drawString(8, 16, {0xff, 0xff, 0}, value);
+    matrix.drawString(8, 16, valueColor, value);
 
-    matrix.swapBuffers(true);
+    matrix.swapBuffers(false);
 
     messageInit();
 }
 
+// Initialize the timer for a message
 void messageInit() {
     messageMillis = millis();
 }
 
+// Hide message if enough time has passed
 void messageTest() {
     if (messageMillis != 0) {
         if (millis() > messageMillis + 2000) {
@@ -383,6 +389,7 @@ void messageTest() {
     }
 }
 
+// Do everything needed to advance to the next generation
 void advanceGeneration() {
     // Swap generation buffers (current generation becomes previous generation)
     swapGenerationBuffer();

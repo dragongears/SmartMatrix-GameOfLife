@@ -4,24 +4,25 @@
 
 Remote control functions:
 
-	Fast forward: Increase speed/Leave single step mode
-	Rewind: Decrease speed/Leave single step mode
+	Vol+: Increase speed/Leave single step mode
+	Vol-: Decrease speed/Leave single step mode
 	Play/Pause: Enter single step mode/Step to next generation
-	Phone: Change color
-	EQ: Toggle wrap on and off
-	CH+: Increase display brightness
-	CH-: Decrease display brightness
-	5: Enter edit mode
-	0: Randomize field
+	Enter/Save: Change color
+	BACK: Toggle wrap on and off
+	UP: Increase display brightness
+	DOWN: Decrease display brightness
+	Stop/Mode: Enter edit mode
+	Setup: Randomize field
 
 Edit mode (Green cursor: live cell under cursor, Red cursor: dead cell under cursor):
 
 	Play/Pause: Leave edit mode
-	0: Clear field
-	+: Live cell at cursor
-	-: Dead cell at cursor
-	4: Move cursor left
-	6: Move cursor right
-	2: Move cursor up
-	8: Move cursor down
-	5: Center cursor
+	BACK: Clear field
+	Setup: Randomize field
+	1: Live cell at cursor
+	0: Dead cell at cursor
+	LEFT: Move cursor left
+	RIGHT: Move cursor right
+	UP: Move cursor up
+	DOWN: Move cursor down
+	Enter/Save: Center cursor

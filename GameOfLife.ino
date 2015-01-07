@@ -42,29 +42,28 @@ int RECV_PIN = 18;
 IRrecv irrecv(RECV_PIN);
 decode_results results;
 
-// IR Raw Key Codes for NEC remote
-#define IRCODE_NEC_HELD     0xFFFFFFFF
-#define IRCODE_NEC_ANSWER   0x00FFA25D
-#define IRCODE_NEC_PHONE    0x00FF629D
-#define IRCODE_NEC_HANGUP   0x00FFE21D
-#define IRCODE_NEC_CH_DOWN  0x00FF22DD
-#define IRCODE_NEC_CH_UP    0x00FF02FD
-#define IRCODE_NEC_EQ       0x00FFC23D
-#define IRCODE_NEC_REW      0x00FFE01F
-#define IRCODE_NEC_FF       0x00FFA857
-#define IRCODE_NEC_PLAY     0x00FF906F
-#define IRCODE_NEC_MINUS    0x00FF9867
-#define IRCODE_NEC_PLUS     0x00FFB04F
-#define IRCODE_NEC_0    0x00FF6897
-#define IRCODE_NEC_1    0x00FF30CF
-#define IRCODE_NEC_2    0x00FF18E7
-#define IRCODE_NEC_3    0x00FF7A85
-#define IRCODE_NEC_4    0x00FF10EF
-#define IRCODE_NEC_5    0x00FF38C7
-#define IRCODE_NEC_6    0x00FF5AA5
-#define IRCODE_NEC_7    0x00FF42BD
-#define IRCODE_NEC_8    0x00FF4AB5
-#define IRCODE_NEC_9    0x00FF52AD
+// IR Raw Key Codes for Adafruit remote
+#define ADAFRUIT_KEY_1               0xFD08F7
+#define ADAFRUIT_KEY_2               0xFD8877
+#define ADAFRUIT_KEY_3               0xFD48B7
+#define ADAFRUIT_KEY_4               0xFD28D7
+#define ADAFRUIT_KEY_5               0xFDA857
+#define ADAFRUIT_KEY_6               0xFD6897
+#define ADAFRUIT_KEY_7               0xFD18E7
+#define ADAFRUIT_KEY_8               0xFD9867
+#define ADAFRUIT_KEY_9               0xFD58A7
+#define ADAFRUIT_KEY_0               0xFD30CF
+#define ADAFRUIT_KEY_DOWN            0xFDB04F
+#define ADAFRUIT_KEY_LEFT            0xFD10EF
+#define ADAFRUIT_KEY_UP              0xFDA05F
+#define ADAFRUIT_KEY_RIGHT           0xFD50AF
+#define ADAFRUIT_KEY_BACK            0xFD708F
+#define ADAFRUIT_KEY_ENTER           0xFD906F
+#define ADAFRUIT_KEY_SETUP           0xFD20DF
+#define ADAFRUIT_KEY_PAUSE           0xFD807F
+#define ADAFRUIT_KEY_STOP            0xFD609F
+#define ADAFRUIT_KEY_VOLUMEUP        0xFD40BF
+#define ADAFRUIT_KEY_VOLUMEDOWN      0xFD00FF
 
 SmartMatrix matrix;
 
@@ -147,7 +146,7 @@ void remoteFunctions() {
     // Check for code from remote control
     if (irrecv.decode(&results)) {
         switch(results.value){
-            case IRCODE_NEC_FF:
+            case ADAFRUIT_KEY_VOLUMEUP:
                 if (singleStep) {
                     singleStep = false;
                 } else {
@@ -158,7 +157,7 @@ void remoteFunctions() {
                 }
             break;
 
-            case IRCODE_NEC_REW:
+            case ADAFRUIT_KEY_VOLUMEDOWN:
                 if (singleStep) {
                     singleStep = false;
                 } else {
@@ -169,7 +168,7 @@ void remoteFunctions() {
                 }
             break;
 
-            case IRCODE_NEC_PLAY:
+            case ADAFRUIT_KEY_PAUSE:
                 if (singleStep) {
                     advanceGeneration();
                 } else {
@@ -177,7 +176,7 @@ void remoteFunctions() {
                 }
             break;
 
-            case IRCODE_NEC_PHONE:
+            case ADAFRUIT_KEY_ENTER:
                 color++;
                 if (color > 7) {
                     color = 1;
@@ -186,12 +185,12 @@ void remoteFunctions() {
                 delay(100);
             break;
 
-            case IRCODE_NEC_EQ:
+            case ADAFRUIT_KEY_BACK:
                 wrap = !wrap;
                 showWrap();
             break;
 
-            case IRCODE_NEC_CH_DOWN:
+            case ADAFRUIT_KEY_DOWN:
                 if (brightness > 10) {
                     brightness -= 10;
                     matrix.setBrightness(brightness*(255/100));
@@ -199,7 +198,7 @@ void remoteFunctions() {
                 showBrightness();
             break;
 
-            case IRCODE_NEC_CH_UP:
+            case ADAFRUIT_KEY_UP:
                 if (brightness < 100) {
                     brightness += 10;
                     matrix.setBrightness(brightness*(255/100));
@@ -207,11 +206,11 @@ void remoteFunctions() {
                 showBrightness();
             break;
 
-            case IRCODE_NEC_5:
+            case ADAFRUIT_KEY_STOP:
                 editStart();
             break;
 
-            case IRCODE_NEC_0:
+            case ADAFRUIT_KEY_SETUP:
                 randomizeField();
                 displayCurrentGeneration();
             break;
@@ -253,49 +252,53 @@ void editRemoteFunctions() {
     if (irrecv.decode(&results)) {
         switch(results.value){
 
-            case IRCODE_NEC_PLAY:
+            case ADAFRUIT_KEY_PAUSE:
                 editEnd();
             break;
 
-            case IRCODE_NEC_0:
+            case ADAFRUIT_KEY_BACK:
                 for (int x = 0; x < 34*34; x++) {
                     currentGenerationPtr[x] = 0;
                 }
                 moveEditCursor(0, 0);
             break;
 
-            case IRCODE_NEC_PLUS:
+            case ADAFRUIT_KEY_1:
                 generationBuffer[generationToggle][editX+1][editY+1] = 1;
                 moveEditCursor(0, 0);
             break;
 
-            case IRCODE_NEC_MINUS:
+            case ADAFRUIT_KEY_0:
                 generationBuffer[generationToggle][editX+1][editY+1] = 0;
                 moveEditCursor(0, 0);
             break;
 
-            case IRCODE_NEC_4:
+            case ADAFRUIT_KEY_LEFT:
                 moveEditCursor(-1, 0);
             break;
 
-            case IRCODE_NEC_6:
+            case ADAFRUIT_KEY_RIGHT:
                 moveEditCursor(1, 0);
             break;
 
-            case IRCODE_NEC_2:
+            case ADAFRUIT_KEY_UP:
                 moveEditCursor(0, -1);
             break;
 
-            case IRCODE_NEC_8:
+            case ADAFRUIT_KEY_DOWN:
                 moveEditCursor(0, 1);
             break;
 
-            case IRCODE_NEC_5:
+            case ADAFRUIT_KEY_ENTER:
                 editX = 16;
                 editY = 16;
                 moveEditCursor(0, 0);
             break;
 
+            case ADAFRUIT_KEY_SETUP:
+                randomizeField();
+                moveEditCursor(0, 0);
+            break;
         }
         irrecv.resume(); // Receive the next value
     }

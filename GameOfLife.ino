@@ -1,6 +1,6 @@
 /*
  * SmartMatrix Game of Life - Conway's Game of Life for the Teensy 3.1 and SmartMatrix Shield.
- * Version 1.2.0
+ * Version 1.2.1
  * Copyright (c) 2014 Art Dahm (art@dahm.com)
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of
@@ -75,9 +75,9 @@ const rgb24 valueColor = {0xff, 0xff, 0};
 const rgb24 cursorColor = {0xff, 0x00, 0x00};
 const rgb24 cursorOverCellColor = {0x00, 0xff, 0x00};
 
-#define HISTORY_GENERATIONS 10
+#define HISTORY_GENERATIONS 16
 
-uint16_t history[HISTORY_GENERATIONS];
+uint32_t history[HISTORY_GENERATIONS];
 uint16_t generations=0;
 
 uint8_t *currentGenerationPtr;
@@ -300,6 +300,7 @@ void editRemoteFunctions() {
                 moveEditCursor(0, 0);
             break;
         }
+
         irrecv.resume(); // Receive the next value
     }
 }
@@ -332,6 +333,7 @@ void showWrap() {
         generationBuffer[!generationToggle][0][33] = 0;
         generationBuffer[!generationToggle][33][0] = 0;
     }
+
     matrix.drawString(5, 14, textColor, "WRAP");
 
     matrix.swapBuffers(false);
@@ -462,65 +464,69 @@ void swapGenerationBuffer() {
 void boringnessDetection() {
     pushGeneration(countLiveCells());
 
-    if (patternRepeat())
+    if (patternRepeat()) {
         generations++;
-    else
+    } else {
         generations = 0;
+    }
 
-    if(generations == HISTORY_GENERATIONS*20)
-    {
+    if(generations == HISTORY_GENERATIONS*8) {
         for (int x = 13; x < 21; x++) {
             for (int y = 13; y < 21; y++) {
                 generationBuffer[generationToggle][x][y] = rand()%2;
             }
         }
+
         generations = 0;
     }
 }
 
 // Test if the pattern of total live cells in history duplicates
-uint8_t patternRepeat(void) {
-	uint8_t repeat = 0;
+bool patternRepeat(void) {
+	bool repeat = false;
 
-	for (int genPatternLength = HISTORY_GENERATIONS/2; genPatternLength >= 1; genPatternLength--)
-	{
-		int notsame = 0;
+	for (int genPatternLength = HISTORY_GENERATIONS/2; genPatternLength >= 1; genPatternLength--) {
+		bool notsame = false;
 
         // test for duplicate pattern
-		for (int gen = genPatternLength-1; gen >= 0; gen--)
-			if (history[gen] != history[genPatternLength+gen])
-				notsame++;
+		for (int gen = genPatternLength-1; gen >= 0; gen--) {
+			if (history[gen] != history[genPatternLength+gen]) {
+				notsame = true;
+			}
+		}
 
-		if (!notsame)
+		if (notsame == false)
 		{
 		    // two patterns repeat
-			repeat = 1;
+			repeat = true;
 		}
 	}
+
 	return repeat;
 }
 
 // Push generation live cell total on top of history stack
-void pushGeneration(uint16_t total) {
-	for (uint8_t x = HISTORY_GENERATIONS - 1; x > 0; x--)
+void pushGeneration(uint32_t total) {
+	for (uint8_t x = 1; x < HISTORY_GENERATIONS; x++) {
 		history[x-1] = history[x];
+	}
 
 	history[HISTORY_GENERATIONS - 1] = total;
 }
 
 // Count the number of live cells in a generation
-unsigned int countLiveCells() {
+uint16_t countLiveCells() {
 	uint16_t total = 0;
 	uint8_t x,y;
-	for(x=1; x < 33; x++)
-	{
-		for(y=1; y < 33; y++)
-		{
+
+	for(x=1; x < 33; x++) {
+		for(y=1; y < 33; y++) {
 			if (generationBuffer[generationToggle][x-1][y-1]) {
     			total++;
 			}
 		}
 	}
+
 	return total;
 }
 

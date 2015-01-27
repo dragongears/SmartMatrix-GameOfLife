@@ -1,6 +1,6 @@
 /*
  * SmartMatrix Game of Life - Conway's Game of Life for the Teensy 3.1 and SmartMatrix Shield.
- * Version 1.2.2
+ * Version 1.2.3
  * Copyright (c) 2014 Art Dahm (art@dahm.com)
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of
@@ -77,7 +77,7 @@ const rgb24 cursorOverCellColor = {0x00, 0xff, 0x00};
 
 #define HISTORY_GENERATIONS 10
 
-uint32_t history[HISTORY_GENERATIONS];
+uint16_t history[HISTORY_GENERATIONS];
 uint16_t generations=0;
 
 uint8_t *currentGenerationPtr;
@@ -506,7 +506,7 @@ bool patternRepeat(void) {
 }
 
 // Push generation live cell total on top of history stack
-void pushGeneration(uint32_t total) {
+void pushGeneration(uint16_t total) {
 	for (uint8_t x = 1; x < HISTORY_GENERATIONS; x++) {
 		history[x-1] = history[x];
 	}

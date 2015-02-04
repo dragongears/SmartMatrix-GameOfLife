@@ -75,7 +75,7 @@ const rgb24 valueColor = {0xff, 0xff, 0};
 const rgb24 cursorColor = {0xff, 0x00, 0x00};
 const rgb24 cursorOverCellColor = {0x00, 0xff, 0x00};
 
-#define HISTORY_GENERATIONS 10
+#define HISTORY_GENERATIONS 40
 
 uint16_t history[HISTORY_GENERATIONS];
 uint16_t generations=0;
@@ -470,7 +470,7 @@ void boringnessDetection() {
         generations = 0;
     }
 
-    if(generations == HISTORY_GENERATIONS*8) {
+    if(generations == HISTORY_GENERATIONS*2) {
         for (int x = 13; x < 21; x++) {
             for (int y = 13; y < 21; y++) {
                 generationBuffer[generationToggle][x][y] = rand()%2;

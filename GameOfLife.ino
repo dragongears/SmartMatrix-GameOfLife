@@ -1,6 +1,6 @@
 /*
  * SmartMatrix Game of Life - Conway's Game of Life for the Teensy 3.1 and SmartMatrix Shield.
- * Version 1.2.4
+ * Version 1.2.5
  * Copyright (c) 2014 Art Dahm (art@dahm.com)
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of
@@ -93,9 +93,9 @@ uint8_t editColor;
 unsigned long speed = 100;
 bool singleStep = false;
 bool wrap = true;
-long messageMillis = 0;
+unsigned long messageMillis = 0;
 uint8_t color = 1;
-rgb24 colors[] = {{0x99, 0x99, 0x99}, {0xff, 0xff, 0xff}, {0x00, 0x00, 0xff}, {0x00, 0xff, 0xff}, {0x00, 0xff, 0x00}, {0xff, 0xff, 0x00}, {0xff, 0x00, 0x00}, {0xff, 0x00, 0xff}};
+rgb24 colors[] = {{189, 195, 199}, {255, 255, 255}, {52, 152, 219}, {0, 255, 255}, {46, 204, 113}, {241, 196, 15}, {211, 84, 0}, {222, 88, 253}};
 
 // the setup() method runs once, when the sketch starts
 void setup() {

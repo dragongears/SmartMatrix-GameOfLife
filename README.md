@@ -8,6 +8,7 @@ Remote control functions:
 	Vol-: Decrease speed/Leave single step mode
 	Play/Pause: Enter single step mode/Step to next generation
 	Enter/Save: Change color
+	0: Multi/Single color toggle
 	BACK: Toggle wrap on and off
 	UP: Increase display brightness
 	DOWN: Decrease display brightness

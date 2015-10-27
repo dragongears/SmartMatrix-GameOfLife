@@ -1,6 +1,6 @@
 /*
  * SmartMatrix Game of Life - Conway's Game of Life for the Teensy 3.1 and SmartMatrix Shield.
- * Version 1.2.5
+ * Version 1.3.0
  * Copyright (c) 2014 Art Dahm (art@dahm.com)
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of
@@ -93,6 +93,7 @@ uint8_t editColor;
 unsigned long speed = 100;
 bool singleStep = false;
 bool wrap = true;
+bool multicolor = false;
 unsigned long messageMillis = 0;
 uint8_t color = 1;
 rgb24 colors[] = {{189, 195, 199}, {255, 255, 255}, {52, 152, 219}, {0, 255, 255}, {46, 204, 113}, {241, 196, 15}, {211, 84, 0}, {222, 88, 253}};
@@ -188,6 +189,11 @@ void remoteFunctions() {
             case ADAFRUIT_KEY_BACK:
                 wrap = !wrap;
                 showWrap();
+            break;
+
+            case ADAFRUIT_KEY_0:
+                multicolor = !multicolor;
+                showMulticolor();
             break;
 
             case ADAFRUIT_KEY_DOWN:
@@ -303,6 +309,24 @@ void editRemoteFunctions() {
 
         irrecv.resume(); // Receive the next value
     }
+}
+
+void showMulticolor() {
+    matrix.fillScreen(black);
+
+    matrix.setFont(font6x10);
+
+    if (multicolor) {
+        matrix.drawString(2, 3, textColor, "MULTI");
+    } else {
+        matrix.drawString(7, 3, textColor, "ONE");
+    }
+
+    matrix.drawString(1, 14, textColor, "COLOR");
+
+    matrix.swapBuffers(false);
+
+    messageInit();
 }
 
 void showWrap() {
@@ -430,28 +454,38 @@ void displayCurrentGeneration() {
     for (int x = 0; x < 32; x++) {
         for (int y = 0; y < 32; y++) {
             uint8_t cell = generationBuffer[generationToggle][x+1][y+1];
-            cell ? matrix.drawPixel(x, y, colors[color]) : matrix.drawPixel(x, y, black);
+            if (cell == 0) {
+                matrix.drawPixel(x, y, black);
+            } else if (cell == 1) {
+                matrix.drawPixel(x, y, colors[color]);
+            }
         }
     }
 
-    matrix.swapBuffers(false);
+    matrix.swapBuffers(true);
+
+    if (multicolor) {
+        color++;
+        color &= 0x07;
+    }
 }
 
 // Count neighbors and determine if cell is alive or dead
+// return 0 = dead, 1 = new life, 2 = still alive
 uint8_t getCellStatus(uint8_t x, uint8_t y) {
 
-    uint16_t count = 0;
+    uint8_t count = 0;
 
-    count += generationBuffer[!generationToggle][x-1][y-1];
-    count += generationBuffer[!generationToggle][x][y-1];
-    count += generationBuffer[!generationToggle][x+1][y-1];
-    count += generationBuffer[!generationToggle][x-1][y];
-    count += generationBuffer[!generationToggle][x+1][y];
-    count += generationBuffer[!generationToggle][x-1][y+1];
-    count += generationBuffer[!generationToggle][x][y+1];
-    count += generationBuffer[!generationToggle][x+1][y+1];
+    count += generationBuffer[!generationToggle][x-1][y-1] ? 1 : 0;
+    count += generationBuffer[!generationToggle][x][y-1] ? 1 : 0;
+    count += generationBuffer[!generationToggle][x+1][y-1] ? 1 : 0;
+    count += generationBuffer[!generationToggle][x-1][y] ? 1 : 0;
+    count += generationBuffer[!generationToggle][x+1][y] ? 1 : 0;
+    count += generationBuffer[!generationToggle][x-1][y+1] ? 1 : 0;
+    count += generationBuffer[!generationToggle][x][y+1] ? 1 : 0;
+    count += generationBuffer[!generationToggle][x+1][y+1] ? 1 : 0;
 
-    return (count == 3 || (count == 2 && generationBuffer[!generationToggle][x][y]));
+    return (count == 3 || (count == 2 && generationBuffer[!generationToggle][x][y])) ? (generationBuffer[!generationToggle][x][y] ? 2 : 1) : 0;
 }
 
 // Swap current and previous generation buffers

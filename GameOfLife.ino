@@ -1,6 +1,6 @@
 /*
  * SmartMatrix Game of Life - Conway's Game of Life for the Teensy 3.1 and SmartMatrix Shield.
- * Version 1.3.0
+ * Version 1.3.1
  * Copyright (c) 2014 Art Dahm (art@dahm.com)
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of
@@ -454,10 +454,10 @@ void displayCurrentGeneration() {
     for (int x = 0; x < 32; x++) {
         for (int y = 0; y < 32; y++) {
             uint8_t cell = generationBuffer[generationToggle][x+1][y+1];
-            if (cell == 0) {
-                matrix.drawPixel(x, y, black);
-            } else if (cell == 1) {
+            if (cell) {
                 matrix.drawPixel(x, y, colors[color]);
+            } else {
+                matrix.drawPixel(x, y, black);
             }
         }
     }
